@@ -20,18 +20,25 @@ allG = img[:,:,1] #channel warna hijau
 allR = img[:,:,2] #channel warna merah
 
 # =============================================================================
+# Grayscale
+# =============================================================================
+#grayImgOpenCV = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+grayImg = np.zeros(shape = (1000,1000))
+for i in range(len(img)):
+    for j in range(len(img[i])):
+        grayImg[i][j] = (0.333*allR[i][j])+(0.5*allG[i][j]+(0.1666*allB[i][j]))
+
+grayImg = grayImg.astype(np.uint8)
+#cv2.imshow('grayManual',grayImg)
+
+# =============================================================================
 # Convert RGB to XYZ(Untuk Lab)
 # =============================================================================
-xyzArr = np.ndarray(shape = img.shape)
+xyzArr = np.zeros(shape = img.shape)
 
-#k = np.array([[0.49, 0.31, 0.20],
-#     [0.17697, 0.81240, 0.01063],
-#     [0.00, 0.01, 0.99]
-#     ])
-
-ktest = k = np.array([[2.77, 1.75, 1.13],
-     [1, 4.59, 0.06],
-     [0.00, 0.057, 5.60]
+k = np.array([[0.49, 0.31, 0.20],
+     [0.17697, 0.81240, 0.01063],
+     [0.00, 0.01, 0.99]
      ])
 
 xyz = np.zeros(3)
@@ -39,12 +46,11 @@ xyz = np.zeros(3)
 for i in range(len(img)):
     for j in range(len(img[i])):
         rgb = np.array([allR[i,j],allG[i,j],allG[i,j]])
-        #xyz = (1/0.17697) * k * float(rgb)
-        xyz = ktest.dot(rgb)
-
-##
-# Simpan Seluruh XYZ Di Sini
-##
+        xyz = (1/0.17697) * k.dot(rgb)
+        
+        xyzArr[i][j][0] = xyz[0]
+        xyzArr[i][j][1] = xyz[1]
+        xyzArr[i][j][2] = xyz[2]
 
 # =============================================================================
 # Mengubah XYZ ke LAB
@@ -65,13 +71,76 @@ zn = 108.883
 l = 116 * flab(y/yn) - 16
 a = 500 * (flab(x/xn) - flab(y/yn))
 b = 200 * (flab(y/yn) - flab(z/zn))
+
+# =============================================================================
+# LBP
+# =============================================================================
+def getLBP(img):
+    lbpLoop = np.arange(1,999)
+    lbpBinarySeq = [0,0,0,0,0,0,0,0]
+    lbpVal = 0
+    lbpList = []
+
+    for i in lbpLoop:
+        for j in lbpLoop:
+            #Atas-Kiri
+            if(grayImg[i,j] < grayImg[i-1,j-1]):
+                lbpBinarySeq[0] = 1
+            else:
+                lbpBinarySeq[0] = 0
+            #Atas
+            if(grayImg[i,j] < grayImg[i-1,j]):
+                lbpBinarySeq[1] = 1
+            else:
+                lbpBinarySeq[1] = 0
+            #Atas-Kanan
+            if(grayImg[i,j] < grayImg[i-1,j+1]):
+                lbpBinarySeq[2] = 1
+            else:
+                lbpBinarySeq[2] = 0
+            #Tengah-Kiri
+            if(grayImg[i,j] < grayImg[i,j-1]):
+                lbpBinarySeq[3] = 1
+            else:
+                lbpBinarySeq[3] = 0
+            #Tengah-Kanan
+            if(grayImg[i,j] < grayImg[i,j+1]):
+                lbpBinarySeq[4] = 1
+            else:
+                lbpBinarySeq[4] = 0
+            #Bawah-Kiri
+            if(grayImg[i,j] < grayImg[i+1,j-1]):
+                lbpBinarySeq[5] = 1
+            else:
+                lbpBinarySeq[5] = 0
+            #Bawah
+            if(grayImg[i,j] < grayImg[i+1,j]):
+                lbpBinarySeq[6] = 1
+            else:
+                lbpBinarySeq[6] = 0
+            #Bawah-Kanan
+            if(grayImg[i,j] < grayImg[i+1,j+1]):
+                lbpBinarySeq[7] = 1
+            else:
+                lbpBinarySeq[7] = 0
+
+            for i in range (8): #Menghitung Nilai LBP Piksel [I,J]
+                lbpVal += lbpBinarySeq[i]*math.pow(2,i)
+                #print(lbpVal)
+        
+            lbpList.append(lbpVal) #Simpan nilai2 LBP Citra
+            lbpBinarySeq = [0,0,0,0,0,0,0,0]
+            lbpVal = 0 #Reset nilai LBP utk pixel selanjutnya
+        
+    lbpList = np.array(lbpList)
+    return lbpList
         
 # =============================================================================
 # Convert to HSV
 # =============================================================================
 
 def toHSV(img):
-    hsvArr = np.ndarray(shape = img.shape)
+    hsvArr = np.zeros(shape = img.shape)
 
     for i in range(len(img)):
         for j in range(len(img[i])):
@@ -116,7 +185,7 @@ def toHSV(img):
 
 def getMean(channel):
     temp = 0
-    flatChannel = channel.ravel()
+    flatChannel = channel.ravel().tolist()
     for i in flatChannel:
         temp += i
         hasilMean = temp/len(flatChannel)
@@ -129,7 +198,7 @@ def getMean(channel):
 
 def getSTD(channel, mean):
     tempSTD = 0
-    flatChannel = channel.ravel()
+    flatChannel = channel.ravel().tolist()
     for i in flatChannel:
         tempSTD += pow(i-mean,2)    
     hasilSTD = round(math.sqrt(tempSTD/len(flatChannel)),2)
@@ -142,7 +211,7 @@ def getSTD(channel, mean):
     
 def getSkewness(channel,mean): ################################################Cek Lagi
     tempSkew = 0
-    flatChannel = channel.ravel()
+    flatChannel = channel.ravel().tolist()
     for i in flatChannel:
         tempSkew += pow(i-mean,3)
     hasilSkew = round(math.pow((tempSkew/len(flatChannel)),1/3),2)
@@ -155,6 +224,8 @@ def getSkewness(channel,mean): ################################################C
 meanR = getMean(allR)
 stdR = getSTD(allR, meanR)
 skewR = getSkewness(allR, meanR)
+
+
 
 # =============================================================================
 # Test HSV result
