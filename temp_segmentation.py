@@ -31,7 +31,7 @@ images = [img,0,th1,
 
 titles = ['Lumpur asli','Histogram','Treshold global statis',
           'Lumpur asli','Histogram','Otsu Treshold',
-          'Otsu + Gauss','Histogram','Otsu + Gauss',
+          'Lumpur asli','Histogram','Otsu + Gauss',
          ]
 
 for i in range(3):

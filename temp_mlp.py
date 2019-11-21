@@ -17,7 +17,7 @@ x = [[0.,0.],   # x = Data Training
 
 y = [0,1]       # y = Nilai Target
 
-classifier = MLPClassifier(solver='lbfgs', alpha=1e-5,
+classifier = MLPClassifier(solver='sgd', alpha=1e-5,
                            hidden_layer_sizes=(5,2),random_state=1)
 
 # =============================================================================
