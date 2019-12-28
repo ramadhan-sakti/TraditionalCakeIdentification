@@ -49,7 +49,7 @@ def mask(img_fix):
 # =============================================================================
 #                                 Inisialisasi     X
 # =============================================================================
-img = cv2.imread('jajanan_resized/Ape/Ape_resized_64.jpg')
+img = cv2.imread('jajanan_resized/PutuAyu/PutuAyu_resized_180.jpg')
 
 allB = img[:,:,0] #channel warna biru
 allG = img[:,:,1] #channel warna hijau
@@ -67,19 +67,18 @@ grayImg = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 grayImg = cv2.filter2D(grayImg,-1,kernelLPF)
 
 #Biner
-biner = binerisasi(grayImg,100)
+biner = binerisasi(grayImg,65)
 cv2.imshow('Gambar Biner LPF',biner)
 
 # =============================================================================
 #                                 EROSI-DILASI
 # =============================================================================
-
 # Dilasi Erosi
 img_erosion = cv2.erode(biner, kernel, iterations = 1)
-img_dilation = cv2.dilate(biner, kernel, iterations = 16)
+img_dilation = cv2.dilate(biner, kernel, iterations = 15)
 
 img_erosion = cv2.erode(img_dilation, kernel, iterations = 15)
-img_dilation = cv2.dilate(img_erosion, kernel, iterations = 5)
+img_dilation = cv2.dilate(img_erosion, kernel, iterations = 15)
 
 #Show Erosi
 cv2.imshow('Erosi',img_erosion)
@@ -101,4 +100,4 @@ cv2.imshow('Hasil Akhir',imgHasil)
 # =============================================================================
 #                                   SAVE          X
 # =============================================================================
-cv2.imwrite('jajanan_segmented/Ape/Ape_segmented_64.jpg', imgHasil)
+cv2.imwrite('jajanan_segmented/PutuAyu/PutuAyu_segmented_180.jpg', imgHasil)

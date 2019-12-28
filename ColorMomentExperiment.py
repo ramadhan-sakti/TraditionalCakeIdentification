@@ -13,15 +13,15 @@ import pandas as pd
 import os
 import datetime
 
-namaFitur = ['meanR', 'meanG', 'meanB', 'meanH', 'meanS', 'meanV', 'meanlabL', 
+namaKolom = ['Nama Item','meanR', 'meanG', 'meanB', 'meanH', 'meanS', 'meanV', 'meanlabL', 
              'meanlabA', 'meanlabB', 'meanLBP', 'stdR', 'stdG', 'stdB', 'stdH', 'stdS', 'stdV', 'stdlabL', 
              'stdlabA', 'stdlabB', 'stdLBP', 'skewR', 'skewG', 'skewB', 'skewH', 'skewS', 'skewV', 'skewlabL', 
-             'skewlabA', 'skewlabB', 'skewLBP']
+             'skewlabA', 'skewlabB', 'skewLBP', 'Class']
 # =============================================================================
 # Grayscale
 # =============================================================================
 def toGray(img):
-    grayImg = np.zeros(shape = (1000,1000))
+    grayImg = np.zeros(shape = (img.shape[0],img.shape[1]))
     for i in range(len(img)):
         for j in range(len(img[i])):
             grayImg[i][j] = (0.333*img[i][j][2])+(0.5*img[i][j][1]+(0.1666*img[i][j][0]))
@@ -104,7 +104,7 @@ def getLBP(grayImg):
     lbpImg = np.zeros(shape = grayImg.shape)
     
     for i in range(1,len(grayImg)-1):
-        for j in range(1,len(grayImg)-1):
+        for j in range(1,len(grayImg[i])-1):
             #Atas-Kiri
             if(grayImg[i,j] < grayImg[i-1,j-1]):
                 lbpBinarySeq[0] = 1
@@ -203,7 +203,6 @@ def toHSV(img):
             hsvArr[i][j][2] = v
 
     return hsvArr
-# =============================================================================
 
 # =============================================================================
 # Hitung Mean
@@ -245,75 +244,90 @@ def getSkewness(channel,mean):
 # =============================================================================
 
 # =============================================================================
-# MAIN
+# Get All Features
 # =============================================================================
-startTime = datetime.datetime.now()
-for i in range(460):
-#read jajanan
-    img = cv2.imread('jajanan_training/'+i)
+
+def getFeature(jajanan,label): #Menerima argumen string nama jajanan
+    featureSet = pd.DataFrame(columns = namaKolom)
+    startTime = datetime.datetime.now()
+    for i in range(1,181):
+    #read jajanan
+        img = cv2.imread('toBeExtracted/'+jajanan+'_cropped_'+str(i)+'.jpg')
+        print('Citra '+jajanan+' ke-'+str(i))
 # =============================================================================
 # Get Mean, STD, Skewness dari seluruh channel
 # =============================================================================
-    allR = img[:,:,2]
-    allG = img[:,:,1]
-    allB = img[:,:,0]
-    grayImg = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    hsvImg = toHSV(img)
-    xyzImg = toXYZ(img)
-    labImg = toLab(xyzImg)
-    fiturLBP = getLBP(grayImg)
+        allR = img[:,:,2]
+        allG = img[:,:,1]
+        allB = img[:,:,0]
+        grayImg = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        hsvImg = toHSV(img)
+        xyzImg = toXYZ(img)
+        labImg = toLab(xyzImg)
+        fiturLBP = getLBP(grayImg)
     
-    #Fitur Mean
-    meanR = getMean(allR)
-    meanG = getMean(allG)
-    meanB = getMean(allB)
-    
-    meanH = getMean(hsvImg[:,:,0])
-    meanS = getMean(hsvImg[:,:,1])
-    meanV = getMean(hsvImg[:,:,2])
-    
-    meanlabL = getMean(labImg[:,:,0])
-    meanlabA = getMean(labImg[:,:,1])
-    meanlabB = getMean(labImg[:,:,2])
-    meanLBP = getMean(fiturLBP)
+        #Fitur Mean
+        meanR = getMean(allR)
+        meanG = getMean(allG)
+        meanB = getMean(allB)
+        
+        meanH = getMean(hsvImg[:,:,0])
+        meanS = getMean(hsvImg[:,:,1])
+        meanV = getMean(hsvImg[:,:,2])
+        
+        meanlabL = getMean(labImg[:,:,0])
+        meanlabA = getMean(labImg[:,:,1])
+        meanlabB = getMean(labImg[:,:,2])
+        meanLBP = getMean(fiturLBP)
 
-    #Fitur STD
-    stdR = getSTD(allR, meanR)
-    stdG = getSTD(allG, meanG)
-    stdB = getSTD(allB, meanB)
+        #Fitur STD
+        stdR = getSTD(allR, meanR)
+        stdG = getSTD(allG, meanG)
+        stdB = getSTD(allB, meanB)
+        
+        stdH = getSTD(hsvImg[:,:,0], meanH)
+        stdS = getSTD(hsvImg[:,:,1], meanS) 
+        stdV = getSTD(hsvImg[:,:,2], meanV)
+        
+        stdlabL = getSTD(labImg[:,:,0], meanlabL)
+        stdlabA = getSTD(labImg[:,:,1], meanlabA)
+        stdlabB = getSTD(labImg[:,:,2], meanlabB)
+        
+        stdLBP = getSTD(fiturLBP, meanLBP)
+        
+        #Fitur Skewness
+        skewR = getSkewness(allR, meanR)
+        skewG = getSkewness(allG, meanG)
+        skewB = getSkewness(allB, meanB)
     
-    stdH = getSTD(hsvImg[:,:,0], meanH)
-    stdS = getSTD(hsvImg[:,:,1], meanS) 
-    stdV = getSTD(hsvImg[:,:,2], meanV)
+        skewH = getSkewness(hsvImg[:,:,0], meanH)
+        skewS = getSkewness(hsvImg[:,:,1], meanS)
+        skewV = getSkewness(hsvImg[:,:,2], meanV)
+        
+        skewlabL = getSkewness(labImg[:,:,0], meanlabL)
+        skewlabA = getSkewness(labImg[:,:,1], meanlabA)
+        skewlabB = getSkewness(labImg[:,:,2], meanlabB)
+        
+        skewLBP = getSkewness(fiturLBP, meanLBP)
     
-    stdlabL = getSTD(labImg[:,:,0], meanlabL)
-    stdlabA = getSTD(labImg[:,:,1], meanlabA)
-    stdlabB = getSTD(labImg[:,:,2], meanlabB)
+        ## Save as cvs
     
-    stdLBP = getSTD(fiturLBP, meanLBP)
-    
-    #Fitur Skewness
-    skewR = getSkewness(allR, meanR)
-    skewG = getSkewness(allG, meanG)
-    skewB = getSkewness(allB, meanB)
-    
-    skewH = getSkewness(hsvImg[:,:,0], meanH)
-    skewS = getSkewness(hsvImg[:,:,1], meanS)
-    skewV = getSkewness(hsvImg[:,:,2], meanV)
-
-    skewlabL = getSkewness(labImg[:,:,0], meanlabL)
-    skewlabA = getSkewness(labImg[:,:,1], meanlabA)
-    skewlabB = getSkewness(labImg[:,:,2], meanlabB)
-    
-    skewLBP = getSkewness(fiturLBP, meanLBP)
-    
-    ## Save as cvs
-    featureSet = pd.DataFrame(columns = namaFitur)
-    featureSet.loc[i] = [meanR, meanG, meanB, meanH, meanS, meanV, meanlabL, 
+        featureSet.loc[i] = [jajanan+'_'+str(i),meanR, meanG, meanB, meanH, meanS, meanV, meanlabL, 
                      meanlabA, meanlabB, meanLBP, stdR, stdG, stdB, stdH, stdS, stdV, 
                      stdlabL, stdlabA, stdlabB, stdLBP, skewR, skewG, skewB, skewH, skewS, 
-                     skewV, skewlabL, skewlabA, skewlabB, skewLBP]
+                     skewV, skewlabL, skewlabA, skewlabB, skewLBP, label]
 
-endTime = datetime.datetime.now()
-deltaTime = endTime-startTime
-print('Selesai Dalam => '+str(deltaTime))
+    #Save to excel
+    featureSet.to_excel('FeatureSet_'+jajanan+'.xlsx')
+    endTime = datetime.datetime.now()
+    deltaTime = endTime-startTime
+    print('Selesai Dalam => '+str(deltaTime))
+
+# =============================================================================
+# Run
+# =============================================================================
+getFeature('Ape',1)
+#getFeature('DadarGulung',2)
+getFeature('Lumpur',3)
+getFeature('PutuAyu',4)
+getFeature('Soes',5)
